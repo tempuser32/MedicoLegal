@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             // Try to use the backend API if available
             try {
-                const response = await fetch('http://localhost:3002/api/auth/forgot-password', {
+                const response = await fetch('https://medicolegal.onrender.com/api/auth/forgot-password', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
