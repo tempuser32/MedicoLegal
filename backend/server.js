@@ -1,14 +1,16 @@
-require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
+require('dotenv').config();
+
 const authRoutes = require('./routes/auth');
 const medicalRoutes = require('./routes/medical');
 
 const app = express();
 
-// Log startup
+// Logging
 console.log('Starting server...');
 console.log('Environment variables:', {
     MONGODB_URI: process.env.MONGODB_URI || 'Not set',
@@ -23,13 +25,37 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Connect to MongoDB with additional options
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/medical', medicalRoutes);
+
+// Ensure uploads folder exists
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use('/uploads', express.static(uploadsDir));
+
+// Serve overview.html as default BEFORE express.static
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../html', 'overview.html'));
+});
+
+// Serve static files (general and medical-specific)
+app.use('/css', express.static(path.join(__dirname, '../css')));
+app.use('/js', express.static(path.join(__dirname, '../js')));
+app.use('/medical', express.static(path.join(__dirname, '../html/medical')));
+app.use('/css/medical', express.static(path.join(__dirname, '../css/medical')));
+app.use('/js/medical', express.static(path.join(__dirname, '../js/medical')));
+app.use(express.static(path.join(__dirname, '../html'))); // Keep this last
+
+// MongoDB connection
 mongoose.connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     serverSelectionTimeoutMS: 10000,
     socketTimeoutMS: 45000,
-    family: 4, // Use IPv4
+    family: 4,
     retryWrites: true,
     w: 'majority',
     keepAlive: true,
@@ -38,22 +64,15 @@ mongoose.connect(process.env.MONGODB_URI, {
 })
 .then(() => {
     console.log('Successfully connected to MongoDB');
-    mongoose.connection.on('error', (err) => {
-        console.error('MongoDB connection error:', err);
-    });
-    mongoose.connection.on('disconnected', () => {
-        console.log('MongoDB disconnected');
-    });
-    
-    // Check if the database is accessible
+    mongoose.connection.on('error', err => console.error('MongoDB connection error:', err));
+    mongoose.connection.on('disconnected', () => console.log('MongoDB disconnected'));
+
     mongoose.connection.db.admin().ping()
         .then(() => {
             console.log('Database is accessible');
-            // Start server
-            const PORT = process.env.PORT || 3002; // Changed to match .env
+            const PORT = process.env.PORT || 3002;
             app.listen(PORT, () => {
                 console.log(`Server is running on port ${PORT}`);
-                console.log('Server is ready to accept requests');
             });
         })
         .catch(err => {
@@ -63,40 +82,5 @@ mongoose.connect(process.env.MONGODB_URI, {
 })
 .catch(err => {
     console.error('MongoDB connection error:', err);
-    console.error('Connection details:', {
-        uri: process.env.MONGODB_URI,
-        timeout: 10000,
-        socketTimeout: 45000
-    });
     process.exit(1);
-});
-
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/medical', medicalRoutes);
-
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, 'uploads');
-const fs = require('fs');
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Serve static files
-app.use(express.static(path.join(__dirname, '../html')));
-app.use(express.static(path.join(__dirname, '../css')));
-app.use(express.static(path.join(__dirname, '../js')));
-app.use('/medical', express.static(path.join(__dirname, '../html/medical')));
-app.use('/css/medical', express.static(path.join(__dirname, '../css/medical')));
-app.use('/js/medical', express.static(path.join(__dirname, '../js/medical')));
-
-// Serve uploaded files (with authentication)
-app.use('/uploads', (req, res, next) => {
-    // This middleware could be enhanced with authentication checks
-    next();
-}, express.static(path.join(__dirname, 'uploads')));
-
-// Serve overview.html as the default page for the root URL
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../html', 'overview.html'));
 });
