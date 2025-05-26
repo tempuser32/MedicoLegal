@@ -64,6 +64,17 @@ mongoose.connect(process.env.MONGODB_URI, {
 })
 .then(() => {
     console.log('Successfully connected to MongoDB');
+    const PORT = process.env.PORT || 3002;
+    app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+    });
+})
+.catch(err => {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
+})
+.then(() => {
+    console.log('Successfully connected to MongoDB');
     mongoose.connection.on('error', err => console.error('MongoDB connection error:', err));
     mongoose.connection.on('disconnected', () => console.log('MongoDB disconnected'));
 

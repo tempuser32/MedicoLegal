@@ -18,63 +18,63 @@ const verifyToken = (req, res, next) => {
 };
 
 // Middleware to verify admin
-const verifyAdmin = async (req, res, next) => {
-    try {
-        verifyToken(req, res, async () => {
-            const user = await User.findById(req.user.id);
-            if (!user.isAdmin && !user.isSuperAdmin) {
+const verifyAdmin = (req, res, next) => {
+    verifyToken(req, res, async () => {
+        try {
+            const user = await User.findById(req.user.userId);
+            if (!user || (!user.isAdmin && !user.isSuperAdmin)) {
                 return res.status(403).json({ message: 'Admin access required' });
             }
             next();
-        });
-    } catch (error) {
-        return res.status(500).json({ message: 'Server error' });
-    }
+        } catch (error) {
+            return res.status(500).json({ message: 'Server error' });
+        }
+    });
 };
 
 // Middleware to verify superadmin
-const verifySuperAdmin = async (req, res, next) => {
-    try {
-        verifyToken(req, res, async () => {
-            const user = await User.findById(req.user.id);
-            if (!user.isSuperAdmin) {
+const verifySuperAdmin = (req, res, next) => {
+    verifyToken(req, res, async () => {
+        try {
+            const user = await User.findById(req.user.userId);
+            if (!user || !user.isSuperAdmin) {
                 return res.status(403).json({ message: 'Superadmin access required' });
             }
             next();
-        });
-    } catch (error) {
-        return res.status(500).json({ message: 'Server error' });
-    }
+        } catch (error) {
+            return res.status(500).json({ message: 'Server error' });
+        }
+    });
 };
 
 // Middleware to verify medical staff
-const verifyMedical = async (req, res, next) => {
-    try {
-        verifyToken(req, res, async () => {
-            const user = await User.findById(req.user.id);
-            if (user.userType !== 'medical') {
+const verifyMedical = (req, res, next) => {
+    verifyToken(req, res, async () => {
+        try {
+            const user = await User.findById(req.user.userId);
+            if (!user || user.userType !== 'medical') {
                 return res.status(403).json({ message: 'Medical staff access required' });
             }
             next();
-        });
-    } catch (error) {
-        return res.status(500).json({ message: 'Server error' });
-    }
+        } catch (error) {
+            return res.status(500).json({ message: 'Server error' });
+        }
+    });
 };
 
 // Middleware to verify legal professional
-const verifyLegal = async (req, res, next) => {
-    try {
-        verifyToken(req, res, async () => {
-            const user = await User.findById(req.user.id);
-            if (user.userType !== 'legal') {
+const verifyLegal = (req, res, next) => {
+    verifyToken(req, res, async () => {
+        try {
+            const user = await User.findById(req.user.userId);
+            if (!user || user.userType !== 'legal') {
                 return res.status(403).json({ message: 'Legal professional access required' });
             }
             next();
-        });
-    } catch (error) {
-        return res.status(500).json({ message: 'Server error' });
-    }
+        } catch (error) {
+            return res.status(500).json({ message: 'Server error' });
+        }
+    });
 };
 
 module.exports = {

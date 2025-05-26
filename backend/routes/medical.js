@@ -6,7 +6,7 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const User = require('../models/User');
 const MedicalRecord = require('../models/MedicalRecord');
-const { verifyToken } = require('../middleware/auth');
+const { verifyToken, verifyMedical } = require('../middleware/auth');
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -45,17 +45,9 @@ const upload = multer({
 });
 
 // Upload medical record with PDF
-router.post('/upload', verifyToken, upload.single('file'), async (req, res) => {
+router.post('/upload', verifyMedical, upload.single('file'), async (req, res) => {
     try {
-        // Check if user is medical staff
-        const user = await User.findById(req.user.id);
-        if (!user || user.userType !== 'medical') {
-            // Delete uploaded file if exists
-            if (req.file) {
-                fs.unlinkSync(req.file.path);
-            }
-            return res.status(403).json({ message: 'Only medical staff can upload records' });
-        }
+        // User is already verified as medical staff by middleware
 
         // Validate required fields
         const requiredFields = [
@@ -84,7 +76,7 @@ router.post('/upload', verifyToken, upload.single('file'), async (req, res) => {
 
         // Create new medical record
         const newRecord = new MedicalRecord({
-            uploadedBy: req.user.id,
+            uploadedBy: req.user.userId,
             patientName: req.body.patientName,
             patientId: req.body.patientId,
             dateOfBirth: new Date(req.body.dateOfBirth),
@@ -128,16 +120,12 @@ router.post('/upload', verifyToken, upload.single('file'), async (req, res) => {
 });
 
 // Get all medical records for the logged-in medical staff
-router.get('/records', verifyToken, async (req, res) => {
+router.get('/records', verifyMedical, async (req, res) => {
     try {
-        // Check if user is medical staff
-        const user = await User.findById(req.user.id);
-        if (!user || user.userType !== 'medical') {
-            return res.status(403).json({ message: 'Only medical staff can access records' });
-        }
+        // User is already verified as medical staff by middleware
 
         // Get records uploaded by this user
-        const records = await MedicalRecord.find({ uploadedBy: req.user.id })
+        const records = await MedicalRecord.find({ uploadedBy: req.user.userId })
             .sort({ createdAt: -1 });
 
         res.json(records);
@@ -148,13 +136,9 @@ router.get('/records', verifyToken, async (req, res) => {
 });
 
 // Get a specific medical record by ID
-router.get('/records/:id', verifyToken, async (req, res) => {
+router.get('/records/:id', verifyMedical, async (req, res) => {
     try {
-        // Check if user is medical staff
-        const user = await User.findById(req.user.id);
-        if (!user || user.userType !== 'medical') {
-            return res.status(403).json({ message: 'Only medical staff can access records' });
-        }
+        // User is already verified as medical staff by middleware
 
         // Get the record
         const record = await MedicalRecord.findById(req.params.id);
@@ -164,7 +148,7 @@ router.get('/records/:id', verifyToken, async (req, res) => {
         }
 
         // Check if user is authorized to view this record
-        if (record.uploadedBy.toString() !== req.user.id) {
+        if (record.uploadedBy.toString() !== req.user.userId) {
             return res.status(403).json({ message: 'You are not authorized to view this record' });
         }
 
@@ -176,13 +160,9 @@ router.get('/records/:id', verifyToken, async (req, res) => {
 });
 
 // Download a medical record PDF
-router.get('/records/:id/download', verifyToken, async (req, res) => {
+router.get('/records/:id/download', verifyMedical, async (req, res) => {
     try {
-        // Check if user is medical staff
-        const user = await User.findById(req.user.id);
-        if (!user || user.userType !== 'medical') {
-            return res.status(403).json({ message: 'Only medical staff can download records' });
-        }
+        // User is already verified as medical staff by middleware
 
         // Get the record
         const record = await MedicalRecord.findById(req.params.id);
@@ -192,7 +172,7 @@ router.get('/records/:id/download', verifyToken, async (req, res) => {
         }
 
         // Check if user is authorized to download this record
-        if (record.uploadedBy.toString() !== req.user.id) {
+        if (record.uploadedBy.toString() !== req.user.userId) {
             return res.status(403).json({ message: 'You are not authorized to download this record' });
         }
 
@@ -215,13 +195,9 @@ router.get('/records/:id/download', verifyToken, async (req, res) => {
 });
 
 // Update a medical record
-router.put('/records/:id', verifyToken, async (req, res) => {
+router.put('/records/:id', verifyMedical, async (req, res) => {
     try {
-        // Check if user is medical staff
-        const user = await User.findById(req.user.id);
-        if (!user || user.userType !== 'medical') {
-            return res.status(403).json({ message: 'Only medical staff can update records' });
-        }
+        // User is already verified as medical staff by middleware
 
         // Get the record
         const record = await MedicalRecord.findById(req.params.id);
@@ -231,7 +207,7 @@ router.put('/records/:id', verifyToken, async (req, res) => {
         }
 
         // Check if user is authorized to update this record
-        if (record.uploadedBy.toString() !== req.user.id) {
+        if (record.uploadedBy.toString() !== req.user.userId) {
             return res.status(403).json({ message: 'You are not authorized to update this record' });
         }
 
@@ -268,13 +244,9 @@ router.put('/records/:id', verifyToken, async (req, res) => {
 });
 
 // Delete a medical record
-router.delete('/records/:id', verifyToken, async (req, res) => {
+router.delete('/records/:id', verifyMedical, async (req, res) => {
     try {
-        // Check if user is medical staff
-        const user = await User.findById(req.user.id);
-        if (!user || user.userType !== 'medical') {
-            return res.status(403).json({ message: 'Only medical staff can delete records' });
-        }
+        // User is already verified as medical staff by middleware
 
         // Get the record
         const record = await MedicalRecord.findById(req.params.id);
@@ -284,7 +256,7 @@ router.delete('/records/:id', verifyToken, async (req, res) => {
         }
 
         // Check if user is authorized to delete this record
-        if (record.uploadedBy.toString() !== req.user.id) {
+        if (record.uploadedBy.toString() !== req.user.userId) {
             return res.status(403).json({ message: 'You are not authorized to delete this record' });
         }
 

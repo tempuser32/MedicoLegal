@@ -3,52 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-
-// Middleware to verify token
-const verifyToken = (req, res, next) => {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-        return res.status(401).json({ message: 'No token provided' });
-    }
-
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded;
-        next();
-    } catch (error) {
-        return res.status(401).json({ message: 'Invalid token' });
-    }
-};
-
-// Middleware to verify admin
-const verifyAdmin = async (req, res, next) => {
-    verifyToken(req, res, async () => {
-        try {
-            const user = await User.findById(req.user.userId);
-            if (!user || (!user.isAdmin && !user.isSuperAdmin)) {
-                return res.status(403).json({ message: 'Admin access required' });
-            }
-            next();
-        } catch (error) {
-            res.status(500).json({ message: 'Server error' });
-        }
-    });
-};
-
-// Middleware to verify superadmin
-const verifySuperAdmin = async (req, res, next) => {
-    verifyToken(req, res, async () => {
-        try {
-            const user = await User.findById(req.user.userId);
-            if (!user || !user.isSuperAdmin) {
-                return res.status(403).json({ message: 'Superadmin access required' });
-            }
-            next();
-        } catch (error) {
-            return res.status(500).json({ message: 'Server error' });
-        }
-    });
-};
+const { verifyToken, verifyAdmin, verifySuperAdmin } = require('../middleware/auth');
 
 // Profile route
 router.get('/profile', verifyToken, async (req, res) => {
@@ -125,56 +80,46 @@ router.put('/update-profile', verifyToken, async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
-
+        
         if (!username || !password) {
-            return res.status(400).json({
-                message: 'Please provide username and password',
-                field: 'all'
+            return res.status(400).json({ 
+                message: 'Please provide username and password'
             });
         }
-
-        const user = await User.findOne({
+        
+        const user = await User.findOne({ 
             $or: [{ id: username }, { email: username }]
         });
-
+        
         if (!user) {
-            return res.status(401).json({
-                message: 'Invalid credentials',
-                field: 'username'
-            });
+            return res.status(401).json({ message: 'Invalid credentials' });
         }
-
+        
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(401).json({
-                message: 'Invalid credentials',
-                field: 'password'
-            });
+            return res.status(401).json({ message: 'Invalid credentials' });
         }
-
+        
         if (user.approvalStatus !== 'approved') {
-            return res.status(403).json({
+            return res.status(403).json({ 
                 message: 'Account not approved',
                 approvalStatus: user.approvalStatus
             });
         }
 
         const token = jwt.sign(
-            { userId: user._id, userType: user.userType, isSuperAdmin: user.isSuperAdmin },
+            { userId: user._id, userType: user.userType },
             process.env.JWT_SECRET,
-            { expiresIn: '24h' }
+            { expiresIn: '1h' }
         );
-
+        
         res.json({
             token,
             user: {
-                id: user._id,
-                userType: user.userType,
                 name: user.name,
                 email: user.email,
-                isSuperAdmin: user.isSuperAdmin
-            },
-            message: 'Login successful'
+                userType: user.userType
+            }
         });
     } catch (error) {
         console.error('Login error:', error);
@@ -186,37 +131,28 @@ router.post('/login', async (req, res) => {
 router.post('/register', async (req, res) => {
     try {
         const { userType, id, password, name, email, phone } = req.body;
-
+        
         if (!userType || !id || !password || !name || !email || !phone) {
-            return res.status(400).json({
-                message: 'All fields are required',
-                field: 'all'
-            });
+            return res.status(400).json({ message: 'All fields are required' });
         }
-
+        
         const existingUser = await User.findOne({
             $or: [
                 { userType, id },
                 { email }
             ]
         });
-
+        
         if (existingUser) {
             if (existingUser.email === email) {
-                return res.status(400).json({
-                    message: 'Email already in use',
-                    field: 'email'
-                });
+                return res.status(400).json({ message: 'Email already in use' });
             } else {
-                return res.status(400).json({
-                    message: 'ID already in use for this user type',
-                    field: 'id'
-                });
+                return res.status(400).json({ message: 'ID already in use for this user type' });
             }
         }
-
+        
         const hashedPassword = await bcrypt.hash(password, 10);
-
+        
         const newUser = new User({
             userType,
             id,
@@ -227,9 +163,9 @@ router.post('/register', async (req, res) => {
             approved: false,
             approvalStatus: 'pending'
         });
-
+        
         await newUser.save();
-
+        
         res.status(201).json({
             message: 'Registration successful. Please wait for approval.',
             user: {
