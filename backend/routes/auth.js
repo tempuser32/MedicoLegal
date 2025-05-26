@@ -131,16 +131,26 @@ router.put('/update-profile', verifyToken, async (req, res) => {
 // Login route
 router.post('/login', async (req, res) => {
     try {
+<<<<<<< HEAD
         const { userType, id, password } = req.body;
         
         // Validate input
         if (!userType || !id || !password) {
             return res.status(400).json({ 
                 message: 'Please provide user type, ID and password',
+=======
+        const { username, password } = req.body;
+        
+        // Validate input
+        if (!username || !password) {
+            return res.status(400).json({ 
+                message: 'Please provide username and password',
+>>>>>>> f6c6948 (Initial Commit)
                 field: 'all'
             });
         }
         
+<<<<<<< HEAD
         // Find user by userType and id
         const user = await User.findOne({ userType, id });
         if (!user) {
@@ -158,19 +168,46 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ 
                 message: 'Invalid credentials',
                 field: 'password'
+=======
+        // Find user by username (could be id or email)
+        const user = await User.findOne({ 
+            $or: [
+                { id: username },
+                { email: username }
+            ]
+        });
+        
+        if (!user) {
+            return res.status(401).json({ 
+                message: 'Invalid credentials'
+            });
+        }
+        
+        // Compare password
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ 
+                message: 'Invalid credentials'
+>>>>>>> f6c6948 (Initial Commit)
             });
         }
         
         // Check if user is approved
         if (user.approvalStatus !== 'approved') {
+<<<<<<< HEAD
             console.log('Account not approved:', { userType, id });
             return res.status(403).json({ 
                 message: 'Account not approved',
                 field: 'approval',
+=======
+            return res.status(403).json({ 
+                message: 'Account not approved',
+>>>>>>> f6c6948 (Initial Commit)
                 approvalStatus: user.approvalStatus
             });
         }
 
+<<<<<<< HEAD
         // Ensure superadmin flag is set correctly
         if (user.id === 'superadmin' && !user.isSuperAdmin) {
             user.isSuperAdmin = true;
@@ -201,6 +238,23 @@ router.post('/login', async (req, res) => {
                 isSuperAdmin: user.isSuperAdmin
             },
             message: 'Login successful'
+=======
+        // Create JWT token that expires in 1 hour
+        const token = jwt.sign(
+            { userId: user._id, userType: user.userType },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+        
+        // Return token and user info
+        res.json({
+            token,
+            user: {
+                name: user.name,
+                email: user.email,
+                userType: user.userType
+            }
+>>>>>>> f6c6948 (Initial Commit)
         });
     } catch (error) {
         console.error('Login error:', error);
