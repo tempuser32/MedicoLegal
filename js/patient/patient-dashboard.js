@@ -22,7 +22,7 @@ async function loadUserProfile() {
     try {
         // Try to load from backend API
         try {
-            const response = await fetch('http://localhost:3001/api/auth/profile', {
+            const response = await fetch('https://medicolegal.onrender.com/api/auth/profile', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
