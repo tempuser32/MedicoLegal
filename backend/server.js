@@ -95,3 +95,8 @@ app.use('/uploads', (req, res, next) => {
     // This middleware could be enhanced with authentication checks
     next();
 }, express.static(path.join(__dirname, 'uploads')));
+
+// Serve overview.html as the default page for the root URL
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../html', 'overview.html'));
+});
