@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // Get admin's profile
-        const response = await fetch('http://localhost:3002/api/auth/profile', {
+        const response = await fetch('http://https://medicolegal.onrender.com/api/auth/profile', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function fetchPendingUsers() {
     try {
         const token = localStorage.getItem('token');
-        const pendingResponse = await fetch('http://localhost:3002/api/auth/admin/dashboard', {
+        const pendingResponse = await fetch('http://https://medicolegal.onrender.com/api/auth/admin/dashboard', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -73,7 +73,7 @@ async function fetchPendingUsers() {
 async function fetchStatistics() {
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:3002/api/auth/admin/users', {
+        const response = await fetch('http://https://medicolegal.onrender.com/api/auth/admin/users', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -153,7 +153,7 @@ function createPendingUserCard(user) {
 async function handleApproval(userId, approve) {
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:3002/api/auth/admin/${approve ? 'approve' : 'reject'}/${userId}`, {
+        const response = await fetch(`http://https://medicolegal.onrender.com/api/auth/admin/${approve ? 'approve' : 'reject'}/${userId}`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -246,7 +246,7 @@ function setupNavigation() {
 async function loadAdminUsers() {
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:3002/api/auth/admin/users', {
+        const response = await fetch('http://https://medicolegal.onrender.com/api/auth/admin/users', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -331,7 +331,7 @@ function setupEventListeners() {
         
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:3002/api/auth/register', {
+            const response = await fetch('http://https://medicolegal.onrender.com/api/auth/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
