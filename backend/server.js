@@ -19,7 +19,7 @@ console.log('Environment variables:', {
 
 // Middleware
 app.use(cors({
-    origin: ['http://127.0.0.1:5503', 'http://localhost:5503'],
+    origin: ['http://127.0.0.1:5500', 'http://localhost:5500', '*'],
     credentials: true
 }));
 app.use(express.json());
@@ -58,38 +58,28 @@ mongoose.connect(process.env.MONGODB_URI, {
     family: 4,
     retryWrites: true,
     w: 'majority',
-    keepAlive: true,
-    keepAliveInitialDelay: 300000,
     autoIndex: true
-})
-.then(() => {
-    console.log('Successfully connected to MongoDB');
-    const PORT = process.env.PORT || 3002;
-    app.listen(PORT, () => {
-        console.log(`Server is running on port ${PORT}`);
-    });
-})
-.catch(err => {
-    console.error('MongoDB connection error:', err);
-    process.exit(1);
 })
 .then(() => {
     console.log('Successfully connected to MongoDB');
     mongoose.connection.on('error', err => console.error('MongoDB connection error:', err));
     mongoose.connection.on('disconnected', () => console.log('MongoDB disconnected'));
 
-    mongoose.connection.db.admin().ping()
-        .then(() => {
-            console.log('Database is accessible');
-            const PORT = process.env.PORT || 3002;
-            app.listen(PORT, () => {
-                console.log(`Server is running on port ${PORT}`);
-            });
-        })
-        .catch(err => {
-            console.error('Database ping failed:', err);
+    // Let Render assign the port
+    const PORT = process.env.PORT || 10000;
+    
+    // Export the app for testing purposes
+    module.exports = app;
+    
+    // Only start the server if this file is run directly
+    if (require.main === module) {
+        app.listen(PORT, '0.0.0.0', () => {
+            console.log(`Server is running on port ${PORT}`);
+        }).on('error', (err) => {
+            console.error('Server failed to start:', err);
             process.exit(1);
         });
+    }
 })
 .catch(err => {
     console.error('MongoDB connection error:', err);
