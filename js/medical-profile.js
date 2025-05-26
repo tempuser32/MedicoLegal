@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadUserProfile() {
     try {
-        const response = await fetch('http://https://medicolegal.onrender.com/api/auth/profile', {
+        const response = await fetch('https://medicolegal.onrender.com/api/auth/login', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',

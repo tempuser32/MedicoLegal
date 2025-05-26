@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         // Get admin's profile
-        const response = await fetch('http://https://medicolegal.onrender.com/api/auth/profile', {
+        const response = await fetch('https://medicolegal.onrender.com/api/auth/login', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -341,7 +341,7 @@ async function loadAllUsers() {
 async function loadProfileData() {
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://https://medicolegal.onrender.com/api/auth/profile', {
+        const response = await fetch('https://medicolegal.onrender.com/api/auth/login', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
